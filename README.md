@@ -1,22 +1,67 @@
 # IT Support Toolkit
 
-> **Automatización profesional con PowerShell 7 para diagnóstico y mantenimiento de sistemas Windows**
+> **Proyecto personal de aprendizaje: Automatización de rutinas de soporte IT con PowerShell 7**
 
 **[English](README.EN.md) | Español**
 
-Un toolkit completo y seguro diseñado para profesionales de soporte IT para automatizar tareas rutinarias de diagnóstico y mantenimiento en sistemas Windows.
+Un toolkit desarrollado como MVP para estandarizar mis rutinas de diagnóstico y mantenimiento en sistemas Windows durante mi aprendizaje en soporte IT de nivel L1/L2.
 
 ---
 
-## 🎯 Propósito
+## 🎯 Sobre Este Proyecto
 
-Este es un **proyecto personal** creado para optimizar flujos de trabajo comunes en soporte IT con enfoque en:
+Este es un **proyecto personal de aprendizaje** creado para:
 
-- **Seguridad Primero** - Detecta privilegios de administrador y sesiones remotas para prevenir acciones disruptivas
-- **Registro Profesional** - Salida en consola con códigos de colores + registro persistente en archivos
-- **Reportes Estructurados** - Exporta resultados a JSON para documentación y análisis
-- **Cero Dependencias** - Usa únicamente comandos nativos de Windows y .NET
-- **Modo Dual** - Menú interactivo para trabajo in-situ, parámetros CLI para automatización
+- **Estandarizar** mi flujo de trabajo en tareas repetitivas de soporte IT
+- **Practicar** scripting profesional con PowerShell 7
+- **Documentar** mis procesos para referencia futura
+- **Minimizar errores** mediante automatización y validaciones
+
+**No es una solución empresarial** - es una herramienta honesta que uso para mejorar mi eficiencia y aprender mejores prácticas mientras trabajo en casos reales de soporte.
+
+---
+
+## 🎓 Decisiones de Diseño
+
+### ¿Por qué PowerShell 7?
+- **Objetos estructurados**: Manejo de datos más limpio que text parsing
+- **JSON nativo**: `ConvertTo-Json` para reportes estructurados
+- **Multiplataforma**: Aunque este toolkit es Windows-only, pwsh es portable
+
+### ¿Por qué cero dependencias externas?
+- **Portabilidad**: Puedo copiar el script a USB o ejecutar en sesiones remotas
+- **Simplicidad**: Sin gestión de módulos, versiones, o instaladores
+- **Aprendizaje**: Fuerza el uso de cmdlets nativos y clases CIM/WMI
+
+### ¿Por qué "safety-first"?
+- **Errores humanos**: Detectar admin/RDP antes de acciones peligrosas
+- **Dry-run mode**: Calcular impacto antes de borrar archivos
+- **Logging**: Auditoría de todas las acciones para troubleshooting
+
+---
+
+## 📏 Alcance del Proyecto
+
+### ✅ Lo que hace (v1.x)
+- Diagnóstico básico del sistema (inventario, red, servicios)
+- Mantenimiento seguro (limpieza de archivos temporales con validaciones)
+- Reportes estructurados en JSON para documentación
+
+### ⏳ Planeado (v2.x)
+- Recolección opcional de eventos críticos de Windows (Application, System)
+- Mejoras en reporting (HTML, comparación de reportes históricos)
+- Troubleshooting de estabilidad (crashes, freezes, blue screens)
+
+### 🔮 Visión (v3.x - Security posture / signals)
+- Checks básicos de postura de seguridad (Windows Defender, Firewall, Updates)
+- Recolección best-effort de señales básicas para análisis (failed logins, cambios de cuentas)
+- **NOT detección/EDR**: Solo observación y recolección para aprendizaje
+
+### ❌ Fuera de alcance
+- Remediación automática de malware
+- Análisis forense profundo
+- Gestión de Active Directory
+- Deployment o configuración de sistemas nuevos
 
 ---
 
@@ -29,7 +74,7 @@ Inventario completo del sistema incluyendo información de hardware, versión de
 Calcula y limpia archivos temporales (usuario + sistema), con ejecución opcional de System File Checker.
 
 ### 🌐 Network Diagnostics (Diagnóstico de Red)
-Auto-detección de gateway, prueba de conectividad (gateway, Google DNS, DNS personalizado), limpieza/registro de caché DNS.
+Auto-detección de gateway, prueba de conectividad (gateway, 8.8.8.8, DNS personalizado), limpieza/registro de caché DNS.
 
 ### 🔧 Service Healer (Sanador de Servicios)
 Reinicia automáticamente servicios críticos de Windows (Print Spooler, Audio, Windows Update).
@@ -132,7 +177,7 @@ pwsh -File .\src\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 10.0
 ```
 --- Network Diagnostics ---
 Gateway:        192.168.1.1 - OK
-Google DNS:     OK
+Ping Google:    OK
 Internal DNS:   Reachable
 Flush DNS:      Success
 Register DNS:   Success
@@ -178,7 +223,7 @@ Identifica si la sesión es:
 - **RDP** - Conexión de Escritorio Remoto (amarillo)
 - **Unknown** - No se puede determinar
 
-**Regla de Seguridad:** Las operaciones de red potencialmente disruptivas (como `ipconfig /release`) están **bloqueadas** en sesiones RDP/Unknown a menos que uses explícitamente `-Force`.
+**Regla de Seguridad:** Las operaciones de red potencialmente disruptivas (como `ipconfig /release`) **muestran un warning** en sesiones RDP/Unknown. Usa explicitamente `-Force` para suprimir el warning y ejecutar de todas formas.
 
 ### Manejo de Errores
 - Bloques try/catch completos alrededor de todas las operaciones
@@ -217,7 +262,7 @@ IT-Support-Toolkit/
 | `-DryRun` | Switch | Performance: calcula tamaño de limpieza sin eliminar | `-DryRun` |
 | `-InternalDns` | String | Network: servidor DNS personalizado a probar | `-InternalDns 10.0.0.1` |
 | `-OutPath` | String | Report: directorio de salida personalizado (predeterminado: C:\IT-Reports) | `-OutPath "C:\Reports"` |
-| `-Force` | Switch | Anular bloqueos de seguridad para acciones disruptivas | `-Force` |
+| `-Force` | Switch | Network: suprimir warnings de seguridad en RDP para acciones disruptivas | `-Force` |
 
 Para documentación completa de parámetros, ver [docs/Commands.md](docs/Commands.md).
 
@@ -274,7 +319,7 @@ Captura completa de la sesión de PowerShell (si es soportada por el entorno).
     "Username": "jdoe",
     "IsAdmin": true,
     "RemoteSessionState": "Local",
-    "ToolkitVersion": "1.0.0"
+    "ToolkitVersion": "1.0.1"
   },
   "Results": {
     "Triage": {
@@ -373,7 +418,7 @@ pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action All
 **R:** No para todas las funciones. Triage, Network (básico), y Admin Shortcuts funcionan sin admin. Performance (limpieza de Windows Temp) y algunas operaciones de Service requieren admin.
 
 ### P: ¿Puedo ejecutar esto en una sesión remota?
-**R:** ¡Sí! El toolkit detecta sesiones RDP y bloquea operaciones potencialmente disruptivas por defecto. Usa `-Force` para anular si es necesario.
+**R:** ¡Sí! El toolkit detecta sesiones RDP y muestra warnings para operaciones potencialmente disruptivas por defecto. Usa `-Force` para suprimir el warning si es necesario.
 
 ### P: ¿Por qué `-DryRun` muestra menos espacio del esperado?
 **R:** Algunos archivos pueden estar bloqueados u ocultos. El script calcula basándose solo en archivos accesibles.
@@ -392,6 +437,59 @@ pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action All
 
 ### P: ¿Por qué falla el ping a Google DNS (8.8.8.8)?
 **R:** En **entornos domésticos**, el firewall de Windows o el router pueden bloquear ping (ICMP) saliente por seguridad. En **entornos corporativos**, puede haber firewall corporativo o proxy. Si tu navegación web funciona, tu conectividad está OK.
+
+---
+
+## ⚠️ Limitaciones Conocidas & Non-goals
+
+### 🚫 Fuera de Alcance (Por Diseño)
+- **Remediación automática de malware**: No es una herramienta de seguridad
+- **Análisis forense profundo**: Solo diagnóstico básico de sistema
+- **Gestión de Active Directory**: No toca políticas de dominio
+- **Deployment de sistemas**: No es herramienta de provisionamiento
+- **Limpieza agresiva de disco**: Solo temp files, no Downloads/Recycle/Browser cache
+
+### 🚧 Limitaciones Actuales (v1.x)
+
+**Performance/Cleanup:**
+- Solo limpia archivos temporales (User Temp + Windows Temp)
+- No limpia: Downloads, Papelera, cachés de navegador, Windows Update backup
+- Archivos en uso son omitidos (no forced deletion)
+- No verifica integridad pre-cleanup (usa SFC opcionalmente post-cleanup)
+
+**Network Diagnostics:**
+- Ping a 8.8.8.8 puede fallar en entornos con firewall (normal, no es error)
+- No diagnostica configuración de proxy
+- No valida certificados SSL/TLS
+- No prueba puertos específicos (solo ICMP)
+
+**Service Healer:**
+- Lista hardcoded de servicios (Spooler, Audio, Windows Update)
+- No detecta servicios custom/third-party
+- No valida dependencias de servicios
+- Restart simple (no troubleshooting de causa raíz)
+
+**Reporting:**
+- Solo JSON (no HTML, no CSV)
+- No comparación histórica (cada reporte es independiente)
+- No envío automático (email, webhook, etc.)
+
+**Environment:**
+- Solo Windows 10/11 y Server 2016+ (no legacy)
+- Requiere PowerShell 7+ (no compatible con 5.1)
+- Solo WMI/CIM nativo (no módulos third-party)
+- Sin localización (output en inglés, docs en EN/ES)
+
+### 📚 Por Qué Estas Limitaciones
+
+**Filosofía:** Este toolkit es un **MVP educacional**, no un producto comercial. Las limitaciones son **intencionales** para:
+
+1. **Mantener simplicidad**: Código legible para aprendizaje
+2. **Cero dependencias**: Portabilidad sin instalación
+3. **Seguridad primero**: Evitar sobre-automatización peligrosa
+4. **Scope controlado**: Terminar v1.x antes de complicar
+
+**Roadmap:** Algunas limitaciones se abordarán en v2.x (HTML reports, event collection), otras son permanentes por diseño.
 
 ---
 
@@ -414,25 +512,33 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## 📜 Licencia
+## 📜 Licencia y Disclaimer
 
-Este es un **proyecto personal** proporcionado tal cual sin garantía. Usar bajo tu propio riesgo.
+Este es un **proyecto personal de aprendizaje** proporcionado "as-is" sin garantías.
 
-Eres libre de:
-- Usar este toolkit para soporte IT personal o profesional
-- Modificar y personalizar para tu entorno
-- Compartir con colegas
+**Libertades:**
+- ✅ Usar para aprendizaje personal o trabajo profesional
+- ✅ Modificar y adaptar a tu entorno
+- ✅ Compartir con colegas o la comunidad
 
-**Disclaimer:** Siempre prueba en entornos no productivos primero. El autor no es responsable de ningún cambio en el sistema o problemas que surjan del uso de este toolkit.
+**Responsabilidad:**
+- ⚠️ **Probar en entornos no productivos primero**
+- ⚠️ Revisar el código antes de ejecutar con privilegios de admin
+- ⚠️ El autor no se responsabiliza por cambios no deseados en sistemas
+
+**Filosofía:** Este toolkit refleja mi aprendizaje continuo. Puede tener errores, decisiones subóptimas, o casos edge no cubiertos. **Úsalo como referencia, no como solución enterprise.**
 
 ---
 
 ## 🤝 Contribuciones
 
-Este es un proyecto personal de aprendizaje. Si tienes sugerencias o encuentras problemas:
-1. Prueba tus cambios exhaustivamente
-2. Documenta cualquier nueva función
-3. Asegura compatibilidad con PowerShell 7+ y Windows 10/11
+Como proyecto de aprendizaje, agradezco:
+- 🐛 Reportes de bugs con contexto (OS, PowerShell version, output)
+- 💡 Sugerencias de mejores prácticas (especialmente de seniors)
+- 📖 Mejoras de documentación
+- ⚠️ Señalar patrones antipatrón o inseguros
+
+**No esperes:** Soporte 24/7, releases frecuentes, o compatibilidad backward. Es aprendizaje público.
 
 ---
 
@@ -444,17 +550,60 @@ Este es un proyecto personal de aprendizaje. Si tienes sugerencias o encuentras 
 
 ---
 
-## 📌 Version
+## 📌 Versión y Roadmap
 
-**Current Version:** 1.0.0  
-**Release Date:** March 3, 2026  
-**PowerShell Required:** 7.0+  
-**Platform:** Windows 10/11, Windows Server 2016+
+**Versión Actual:** 1.0.1  
+**Fecha de Release:** 5 de marzo, 2026  
+**PowerShell Requerido:** 7.0+  
+**Plataforma:** Windows 10/11, Windows Server 2016+
+
+### 🗺️ Roadmap
+
+#### v1.x - Fundación (Actual)
+- ✅ Diagnóstico básico del sistema
+- ✅ Mantenimiento seguro de archivos temporales
+- ✅ Diagnósticos de red
+- ✅ Sanador de servicios críticos
+- ✅ Reportes JSON estructurados
+
+#### v2.x - Troubleshooting Avanzado (Planeado)
+- 📋 Recolección de eventos críticos de Windows (crashes, errores de aplicación)
+- 📊 Reportes HTML con gráficos básicos
+- 🔄 Comparación de reportes históricos
+- 🧹 Análisis de uso de disco (carpetas grandes, duplicados)
+
+#### v3.x - Security posture / signals (Visión)
+- 🛡️ Checks de postura básica (Defender, Firewall, Updates)
+- 🔐 Recolección best-effort de señales de seguridad (intentos de login, cambios de usuarios)
+- 📝 Reportes de cumplimiento básico
+- ⚠️ **Nota**: Solo observación/reporting, NO detección activa ni EDR
+
+### 📜 Changelog
+
+#### v1.0.1 (2026-03-05)
+- **Mejoras de precisión**: Todos los valores MB/GB redondeados a 2 decimales
+- **Formato JSON mejorado**: Service Status ahora muestra texto (Running/Stopped) en lugar de códigos numéricos (1/4)
+- **Renombrado de campo**: `GoogleDNS` → `PingGoogle` para mayor claridad en Network Diagnostics
+- **Fix**: Corrección de flotantes extraños en `TotalCalculated_MB`
+
+#### v1.0.0 (2026-03-03)
+- Lanzamiento inicial
+- 6 módulos principales (Triage, Performance, Network, Services, Admin, Report)
+- Modos interactivo y no-interactivo
+- Diseño safety-first con detección de RDP
+- Registro profesional y reporteo JSON
+- Multi-disk detection con información detallada
+- Ubicación profesional de reportes (C:\IT-Reports)
 
 ---
 
-## 🙏 Acknowledgments
+## 🙏 Notas de Aprendizaje
 
-Built with best practices from the IT support community and designed for real-world troubleshooting scenarios.
+Este proyecto me ha enseñado:
+- Diseño de CLI con PowerShell (parámetros, validación, help)
+- Manejo de objetos PowerShell vs text parsing
+- Importancia de logging y error handling en scripts de producción
+- Safety patterns para operaciones destructivas
+- Documentación técnica para usuarios finales
 
 **Happy troubleshooting!** 🚀

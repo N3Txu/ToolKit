@@ -1,588 +1,275 @@
-# IT Support Toolkit - Commands Reference
+# IT Support Toolkit - L1 Cheat Sheet
 
 **English | [Español](Commands.md)**
 
-## Overview
-This document provides a comprehensive reference for all commands, parameters, and modules available in the IT Support Toolkit.
+> **Quick reference** for L1/L2 technicians. Personal learning project - use as guide, not gospel.
 
 ---
 
-## Table of Contents
-1. [Command-Line Parameters](#command-line-parameters)
-2. [Execution Modes](#execution-modes)
-3. [Module Descriptions](#module-descriptions)
-4. [Usage Examples](#usage-examples)
-5. [Safety Features](#safety-features)
-6. [Output & Logging](#output--logging)
+## 🚀 Quick Start
 
----
-
-## Command-Line Parameters
-
-### `-Mode` (String)
-**Values:** `Menu` | `Run`  
-**Default:** `Menu`  
-**Description:** Determines the execution mode of the toolkit.
-
-- `Menu` - Launches interactive menu interface
-- `Run` - Executes specified action non-interactively
-
-**Examples:**
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Menu
-.\Unified-Toolkit.ps1 -Mode Run -Action Triage
+# Interactive mode (menu)
+pwsh -File .\src\Unified-Toolkit.ps1
+
+# Quick diagnostics
+pwsh -File .\src\Unified-Toolkit.ps1 -Mode Run -Action Triage
+
+# Full suite
+pwsh -File .\src\Unified-Toolkit.ps1 -Mode Run -Action All
 ```
 
 ---
 
-### `-Action` (String)
-**Values:** `Triage` | `Performance` | `Network` | `Services` | `Admin` | `Report` | `All`  
-**Required when:** `-Mode Run`  
-**Description:** Specifies which module to execute in Run mode.
+## 📋 Main Parameters
 
-| Action | Description |
-|--------|-------------|
-| `Triage` | System inventory and information gathering |
-| `Performance` | Temp file cleanup and system maintenance |
-| `Network` | Network connectivity diagnostics |
-| `Services` | Critical Windows service restart |
-| `Admin` | Launch administrative tools |
-| `Report` | Export results to JSON file |
-| `All` | Execute Triage + Performance + Network + Services and auto-export report |
+| Parameter | Type | Values | Default | Description |
+|-----------|------|---------|---------|-------------|
+| `-Mode` | String | `Menu`, `Run` | `Menu` | Interactive vs direct CLI |
+| `-Action` | String | See table below | N/A | Which module to run (required with `-Mode Run`) |
+| `-DryRun` | Switch | N/A | `$false` | Calculate only (Performance), don't delete |
+| `-InternalDns` | String | IP or hostname | N/A | Internal DNS to test (Network) |
+| `-OutPath` | String | Valid path | `C:\IT-Reports` | Where to save JSON reports |
+| `-Force` | Switch | N/A | `$false` | Run network operations in RDP |
 
-**Examples:**
+---
+
+## 🛠️ Actions (Modules)
+
+| Action | What it does | Requires Admin | Useful for |
+|--------|--------------|----------------|------------|
+| `Triage` | System inventory (HW, OS, network, disks) | No | New cases, initial documentation |
+| `Performance` | Clean temp files (user + Windows) | Partial* | Low disk space, slow performance |
+| `Network` | Test gateway, 8.8.8.8, internal DNS; flush/register DNS | No | "No internet", DNS issues, connectivity |
+| `Services` | Restart Print Spooler, Audio, Windows Update | Yes | Printer not working, no audio, Windows Update stuck |
+| `Admin` | Open Task Manager, Services, msconfig | No | Quick access to tools |
+| `Report` | Export previous results to JSON | No | Documentation, escalation, evidence |
+| `All` | Run Triage + Performance + Network + Services + Report | Yes | Full checkup, routine maintenance |
+
+**\*Performance:** User temp doesn't require admin, Windows temp does.
+
+---
+
+## 💡 Common Use Cases
+
+### 📞 "Computer is slow"
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Triage
-.\Unified-Toolkit.ps1 -Mode Run -Action All
+# 1. Initial diagnostics
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Triage
+
+# 2. Check disk space (Triage output)
+# If low space on C: or user disk...
+
+# 3. Dry-run to calculate how much will be freed
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Performance -DryRun
+
+# 4. If >2GB and user approves, execute cleanup
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Performance
 ```
 
----
-
-### `-DryRun` (Switch)
-**Applies to:** Performance module only  
-**Description:** Calculate cleanup size without actually deleting files.
-
-**Examples:**
+### 🌐 "No internet"
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Performance -DryRun
+# Full network diagnostics
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Network
+
+# With corporate internal DNS
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 10.0.0.1
 ```
 
----
+**Interpret output:**
+- `Gateway: OK` + `Ping Google: FAIL` → ISP problem, firewall, or router blocking ICMP (normal at home)
+- `Gateway: FAIL` → Local network problem (cable, switch, NIC)
+- `Internal DNS: Not Reachable` → VPN problem, DNS server down, or firewall
 
-### `-InternalDns` (String)
-**Applies to:** Network module only  
-**Description:** Specify an internal DNS server IP or hostname to test connectivity.
-
-**Examples:**
+### 🖨️ "Can't print"
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 10.0.0.1
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns "dc01.domain.local"
+# Restart Print Spooler + other critical services
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Services
 ```
 
----
-
-### `-OutPath` (String)
-**Applies to:** Report module  
-**Default:** `C:\IT-Reports`  
-**Description:** Custom directory path for report file output.
-
-**Examples:**
+### 📋 Routine maintenance (ticket closing)
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Report -OutPath "C:\Reports"
-.\Unified-Toolkit.ps1 -Mode Run -Action All -OutPath "D:\IT-Logs"
+# Full suite with automatic report
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action All
+
+# File generated: C:\IT-Reports\SupportToolkit-Report-YYYYMMDD-HHMMSS.json
+# Attach to ticket for documentation
 ```
 
 ---
 
-### `-Force` (Switch)
-**Applies to:** Network module  
-**Description:** Enable potentially disruptive network actions even in remote (RDP) sessions.
+## 🔒 Safety Validations
 
-**Safety Note:** By default, disruptive operations are blocked when running in RDP or unknown session types to prevent accidental disconnection.
+### Admin Detection
+- **Performance (Windows Temp):** Requires admin, skips if not
+- **Services:** Requires admin, fails if not
+- **Everything else:** Works without admin
 
-**Examples:**
+### RDP Detection
+- **Network flush/register DNS:** Shows safety warning in RDP by default (can disconnect session)
+- **Override:** Use `-Force` to suppress warning and execute anyway
+
 ```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -Force
+# In RDP session, this will show a safety warning
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Network
+
+# Suppress warning and force execution (have backup plan to reconnect)
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Network -Force
 ```
 
 ---
 
-## Execution Modes
+## 📊 JSON Report Structure
 
-### Interactive Mode (Menu)
-The default mode presenting a numbered menu with the following options:
-
-```
-[1] System Triage (Inventory)
-[2] Performance Maintenance
-[3] Network Diagnostics
-[4] Service Healer
-[5] Admin Shortcuts
-[6] Run All
-[7] Export Report
-[0] Exit
-```
-
-**Features:**
-- User-friendly interface
-- Prompts for additional parameters when needed
-- Option to return to menu or exit after each operation
-- Displays session context (hostname, user, admin status, session type)
-- **Dynamic colors:** Admin in green/red, Session in green/yellow
-
-**Launch:**
-```powershell
-.\Unified-Toolkit.ps1
-# or explicitly
-.\Unified-Toolkit.ps1 -Mode Menu
-```
-
----
-
-### Non-Interactive Mode (Run)
-Execute specific actions directly via command-line parameters. Ideal for automation, scripting, or remote execution.
-
-**Launch:**
-```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action <ActionName> [additional parameters]
-```
-
----
-
-## Module Descriptions
-
-### 1. System Triage (Invoke-Triage)
-**Purpose:** Comprehensive system inventory and information gathering.
-
-**Collects:**
-- Hostname and current username
-- Hardware manufacturer, model, and serial number
-- Windows version and build number
-- System uptime (days, hours, minutes)
-- Active IPv4 addresses
-- **Detection of all fixed disks** with detailed information:
-  - Drive letter (C:, D:, etc.)
-  - Volume label
-  - File system (NTFS, FAT32, etc.)
-  - Total size (GB)
-  - Free space (GB)
-  - Used space (GB)
-  - Percentage free
-- **Visual alerts by color:**
-  - Green: >20% free (optimal)
-  - Yellow: 10-20% free (caution)
-  - Red: <10% free (critical)
-
-**Requirements:** None (works without admin privileges)
-
-**Output:** PSCustomObject with all collected data
-
-**Use Cases:**
-- Initial troubleshooting
-- System documentation
-- Pre-change baseline
-
-**Example:**
-```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Triage
-```
-
-**Example output:**
-```
-Disks:
-  C: [Windows] - NTFS - 125.43 GB free of 500.00 GB (25.1% free)
-  D: [Data] - NTFS - 850.20 GB free of 2000.00 GB (42.5% free)
-  E: [Backup] - NTFS - 50.45 GB free of 1000.00 GB (5.0% free)
-```
-
----
-
-### 2. Performance Maintenance (Invoke-Performance)
-**Purpose:** Clean temporary files and optionally run System File Checker.
-
-**Actions:**
-- Calculate size of `%TEMP%` (user temp folder)
-- Calculate size of `C:\Windows\Temp` (requires admin)
-- Delete temp files (unless `-DryRun` specified)
-- Optional: Run `sfc /scannow` (interactive mode only, requires admin)
-
-**Parameters:**
-- `-DryRun` - Calculate only, don't delete
-
-**Safety Features:**
-- Handles locked files gracefully (continues on error)
-- SFC prompt warns about ~15 minute runtime
-
-**Requirements:**
-- Standard user: Can clean user temp only
-- Administrator: Can clean both user and Windows temp
-
-**Output:** PSCustomObject with MB calculated/freed and SFC status
-
-**Examples:**
-```powershell
-# Dry run to see what would be cleaned
-.\Unified-Toolkit.ps1 -Mode Run -Action Performance -DryRun
-
-# Actually clean files
-.\Unified-Toolkit.ps1 -Mode Run -Action Performance
-```
-
----
-
-### 3. Network Diagnostics (Invoke-Network)
-**Purpose:** Test network connectivity and refresh DNS configuration.
-
-**Actions:**
-1. Auto-detect default gateway
-2. Test connectivity to:
-   - Default gateway
-   - Google DNS (8.8.8.8)
-   - Internal DNS (if `-InternalDns` provided)
-3. Execute `ipconfig /flushdns`
-4. Execute `ipconfig /registerdns`
-
-**Parameters:**
-- `-InternalDns <IP/Host>` - Additional DNS server to test
-- `-Force` - Override safety blocks for disruptive operations
-
-**Safety Features:**
-- Detects RDP/Unknown sessions
-- Blocks disruptive operations (like `/release`) without `-Force`
-- Warns user about potential disconnection risks
-
-**Requirements:** None (standard user can run)
-
-**Output:** PSCustomObject with connectivity results and DNS operation status
-
-**Important Note:** In home environments, the ping to Google DNS (8.8.8.8) may fail due to Windows Firewall or router blocking outbound ICMP. This is normal if web browsing works correctly.
-
-**Examples:**
-```powershell
-# Basic network test
-.\Unified-Toolkit.ps1 -Mode Run -Action Network
-
-# Test with internal DNS
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 10.0.0.1
-
-# Override safety (use cautiously in RDP)
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -Force
-```
-
----
-
-### 4. Service Healer (Invoke-ServiceHealer)
-**Purpose:** Restart critical Windows services that commonly fail.
-
-**Services Targeted:**
-- **Spooler** - Print service
-- **Audiosrv** - Windows Audio
-- **wuauserv** - Windows Update
-
-**Behavior:**
-- If service is running → Restart it
-- If service is stopped → Start it
-- If service fails → Log error and continue
-
-**Safety Features:**
-- Handles service dependencies automatically
-- Continues on error (doesn't stop entire process)
-
-**Requirements:** May require admin for some services
-
-**Output:** Array of PSCustomObjects (one per service) with status and action taken
-
-**Example:**
-```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Services
-```
-
----
-
-### 5. Admin Shortcuts (Invoke-AdminShortcuts)
-**Purpose:** Quick launcher for common administrative tools.
-
-**Tools Launched:**
-- **Task Manager** (`taskmgr.exe`)
-- **Services** (`services.msc`)
-- **System Configuration** (`msconfig.exe`)
-
-**Behavior:** Best-effort launch; continues on error
-
-**Requirements:** None (tools may prompt for elevation if needed)
-
-**Output:** Array of PSCustomObjects (one per tool) with launch status
-
-**Example:**
-```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action Admin
-```
-
----
-
-### 6. Export Report (Export-Report)
-**Purpose:** Export all collected results to a structured JSON file.
-
-**Report Contents:**
 ```json
 {
   "Metadata": {
-    "Timestamp": "2026-03-05 00:07:47",
+    "Timestamp": "2026-03-05T14:23:11",
     "Hostname": "WORKSTATION01",
     "Username": "jdoe",
     "IsAdmin": true,
     "RemoteSessionState": "Local",
-    "ToolkitVersion": "1.0.0"
+    "ToolkitVersion": "1.0.1"
   },
   "Results": {
-    "Triage": {
-      "Hostname": "WORKSTATION01",
-      "Disks": [
-        {
-          "Drive": "C:",
-          "Label": "Windows",
-          "FileSystem": "NTFS",
-          "Size_GB": 500.00,
-          "Free_GB": 125.43,
-          "Used_GB": 374.57,
-          "PercentFree": 25.1
-        },
-        {
-          "Drive": "D:",
-          "Label": "Data",
-          "FileSystem": "NTFS",
-          "Size_GB": 2000.00,
-          "Free_GB": 850.20,
-          "Used_GB": 1149.80,
-          "PercentFree": 42.5
-        }
-      ]
-    },
-    "Performance": { ... },
-    "Network": { ... },
-    "Services": [ ... ]
+    "Triage": { /* complete inventory */ },
+    "Performance": { /* MB freed */ },
+    "Network": { /* connectivity results */ },
+    "Services": [ /* status of each service */ ]
   }
 }
 ```
 
-**File Naming:** `SupportToolkit-Report-YYYYMMDD-HHMMSS.json`
+**Useful fields:**
+- `Triage.Disks[]`: Array of all disks (Drive, Size_GB, Free_GB, PercentFree)
+- `Performance.TotalCalculated_MB`: Space cleaned
+- `Network.PingGoogle`: `true`/`false` (ping to 8.8.8.8)
+- `Services[].Status`: "Running" / "Stopped"
 
-**Default Location:** `C:\IT-Reports`
+---
 
-**Advantages of C:\IT-Reports:**
-- ✅ Not synced with OneDrive (faster, no conflicts)
-- ✅ Professional standard location for IT support
-- ✅ Easy to find on any corporate PC
-- ✅ Not deleted with temp folder cleanups
-- ✅ Automatic folder creation if it doesn't exist
+## 🧪 Dry-Run Best Practice
 
-**Parameters:**
-- `-OutPath <Path>` - Custom output directory
-
-**Examples:**
+**Always** dry-run Performance before executing:
 ```powershell
-# Export to C:\IT-Reports (default)
-.\Unified-Toolkit.ps1 -Mode Run -Action Report
+# 1. Calculate
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Performance -DryRun
 
-# Custom location
-.\Unified-Toolkit.ps1 -Mode Run -Action Report -OutPath "D:\Custom-Reports"
+# Output will show:
+# User Temp:      1234.56 MB
+# Windows Temp:   5678.90 MB
+# Total:          6913.46 MB
+
+# 2. If reasonable (<50% disk or <20GB), execute real
+pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action Performance
 ```
 
 ---
 
-### 7. Run All
-**Purpose:** Execute all diagnostic modules in sequence and auto-export report.
+## 📝 Logging
 
-**Execution Order:**
-1. System Triage
-2. Performance Maintenance
-3. Network Diagnostics
-4. Service Healer
-5. Auto-Export Report
-
-**Note:** Does NOT include Admin Shortcuts (tool launching)
-
-**Example:**
-```powershell
-.\Unified-Toolkit.ps1 -Mode Run -Action All
-.\Unified-Toolkit.ps1 -Mode Run -Action All -DryRun -OutPath "C:\Reports"
-```
-
----
-
-## Usage Examples
-
-### Basic Interactive Use
-```powershell
-# Start menu
-.\Unified-Toolkit.ps1
-
-# Follow prompts, select options 1-7
-```
-
----
-
-### Quick System Check
-```powershell
-# Get system info only
-.\Unified-Toolkit.ps1 -Mode Run -Action Triage
-```
-
----
-
-### Pre-Maintenance Dry Run
-```powershell
-# See what would be cleaned without deleting
-.\Unified-Toolkit.ps1 -Mode Run -Action Performance -DryRun
-```
-
----
-
-### Complete Diagnostic Suite
-```powershell
-# Run everything with custom DNS and output path
-.\Unified-Toolkit.ps1 -Mode Run -Action All -InternalDns 10.0.0.1 -OutPath "D:\Reports"
-```
-
----
-
-### Network Troubleshooting
-```powershell
-# Basic network test
-.\Unified-Toolkit.ps1 -Mode Run -Action Network
-
-# With internal DNS
-.\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 192.168.1.1
-```
-
----
-
-### Service Recovery
-```powershell
-# Restart critical services
-.\Unified-Toolkit.ps1 -Mode Run -Action Services
-```
-
----
-
-### Automated Reporting
-```powershell
-# Run diagnostics and save report to network share
-.\Unified-Toolkit.ps1 -Mode Run -Action All -OutPath "\\fileserver\IT-Reports"
-```
-
----
-
-## Safety Features
-
-### Administrator Detection
-- Automatically detects if running with admin privileges
-- Logs admin status
-- Restricts certain operations when non-admin
-
-### Remote Session Detection
-- Identifies if session is Local, RDP, or Unknown
-- Blocks potentially disruptive network operations in RDP sessions
-- Can be overridden with `-Force` parameter
-
-### Error Handling
-- Try/catch blocks around all critical operations
-- Continues on non-fatal errors
-- Logs all errors for troubleshooting
-
-### File Deletion Safety
-- Handles locked files gracefully
-- Skips files that cannot be deleted
-- Reports actual freed space (not just calculated)
-
----
-
-## Output & Logging
-
-### Console Output
-Color-coded messages for quick visual scanning:
-- **Green (OK)** - Successful operations
-- **Cyan (INFO)** - Informational messages, field labels
-- **Yellow (WARN)** - Warnings, non-critical issues, variable values
-- **Red (ERROR)** - Errors, failed operations
-
-**Interface Enhancement:** In the interactive menu, system information uses differentiated colors:
-- Labels (Computer, User) in **Cyan**
-- Variable values (hostname, username) in **Yellow**
-- Admin status with **dynamic color** (Green for YES / Red for NO)
-- Session type with **dynamic color** (Green for Local / Yellow for RDP)
-
-### Log File
-**Location:** `%TEMP%\SupportToolkit.log`
+**Location:** `%TEMP%\SupportToolkit.log` (typically `C:\Users\<user>\AppData\Local\Temp\`)
 
 **Format:**
 ```
-YYYY-MM-DD HH:mm:ss | LEVEL | Message
-2026-03-05 00:07:15 | INFO | IT Support Toolkit v1.0.0 Started
-2026-03-05 00:07:16 | OK | Triage completed successfully
-2026-03-05 00:07:45 | WARN | Not running as admin - skipping Windows Temp
+2026-03-05 14:23:11 | INFO | IT Support Toolkit v1.0.1 Started
+2026-03-05 14:23:12 | OK | Triage completed successfully
+2026-03-05 14:23:45 | WARN | Not running as admin - skipping Windows Temp
+2026-03-05 14:24:10 | ERROR | Failed to restart service: Spooler
 ```
 
-**Persistence:** Appends to existing log file (doesn't overwrite)
+**Levels:**
+- `INFO`: Normal events
+- `OK`: Successful operations
+- `WARN`: Not critical but notable
+- `ERROR`: Failures requiring attention
 
-### Transcript
-**Location:** `%TEMP%\SupportToolkit-Transcript-YYYYMMDD-HHMMSS.txt`
-
-**Contents:** Complete PowerShell session output including all commands and results
-
-**Note:** Transcript may fail in some environments; toolkit continues anyway
-
----
-
-## Requirements
-
-### System Requirements
-- **OS:** Windows 10/11 or Windows Server 2016+
-- **PowerShell:** Version 7.0 or higher (pwsh.exe)
-- **Permissions:** Standard user (some features require admin)
-
-### No External Dependencies
-- Uses only built-in Windows commands
-- Requires no additional modules or packages
-- Portable - runs from any location
+**Clear log:**
+```powershell
+Remove-Item $env:TEMP\SupportToolkit.log
+```
 
 ---
 
-## Important Notes on Environment Differences
+## ⚠️ Common Troubleshooting
 
-### Corporate vs. Personal Environments
+### "Running scripts is disabled on this system"
+**Fix:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
-The toolkit is primarily designed for corporate environments, but works on personal PCs with some expected differences:
+### "This script requires PowerShell 7+"
+**Fix:** Install pwsh: https://github.com/PowerShell/PowerShell/releases  
+Verify: `pwsh -Version`
 
-#### **BIOS Serial "Default string"**
-- **Normal on:** Custom builds, assembled PCs, generic motherboards (ASUS, Gigabyte, MSI)
-- **Reason:** Manufacturers leave placeholder values that OEMs should program
-- **In corporate:** Brand PCs (Dell, HP, Lenovo) have real programmed serials
+### Performance doesn't free much space
+**Reasons:**
+- Only cleans temp files (not Downloads, not Recycle Bin, not browser cache)
+- User Temp: `C:\Users\<user>\AppData\Local\Temp`
+- Windows Temp: `C:\Windows\Temp` (requires admin)
 
-#### **Google DNS Ping (8.8.8.8) Failure**
-- **Normal on:** Home environments with Windows Firewall or router blocking outbound ICMP
-- **Check:** If web browsing works, connectivity is OK
-- **In corporate:** May have corporate firewall or proxy requirement
+**Alternatives for more space:**
+- Disk Cleanup (cleanmgr.exe)
+- Storage Sense (Settings → System → Storage)
+- Manual: Empty recycle bin, delete old Downloads
 
-These differences are **completely normal** and do not indicate system or toolkit issues.
+### Ping to Google (8.8.8.8) always fails
+**Normal in:**
+- Home: Router or firewall blocking outbound ICMP
+- Corporate: Corporate firewall or proxy
+
+**Verify:** If web browsing works, network is OK. ICMP != HTTP.
+
+### BIOS Serial shows "Default string"
+**Normal in:** Custom build or assembled PCs (ASUS, Gigabyte, MSI motherboards)  
+**Reason:** OEM didn't program serial in BIOS
 
 ---
 
-## Version History
+## 🗺️ Version and Roadmap
+
+**Current:** v1.0.1 (March 5, 2026)
+
+### v1.x - Current
+- Basic diagnostics (inventory, network, services)
+- Safe maintenance (temp cleanup with validations)
+- JSON reports
+
+### v2.x - Planned (Q2/Q3 2026)
+- Collection of critical Windows events (crashes, app errors)
+- HTML reports with charts
+- Historical comparison
+
+### v3.x - Security posture / signals (Vision)
+- Basic security checks (Defender, Firewall, Updates)
+- Best-effort signal collection (failed logins, account changes)
+- **NOT EDR/detection** - only observation for learning
+
+---
+
+## 📜 Changelog
+
+### v1.0.1 (2026-03-05)
+- **Fix:** All MB/GB values rounded to 2 decimals
+- **Improvement:** Service Status now shows text ("Running"/"Stopped") in JSON
+- **Change:** Field `GoogleDNS` renamed to `PingGoogle`
 
 ### v1.0.0 (2026-03-03)
 - Initial release
-- 6 core modules (Triage, Performance, Network, Services, Admin, Report)
-- Interactive menu and non-interactive modes
-- Safety-first design with RDP detection
-- Professional logging and JSON reporting
-- Multi-disk detection and detailed information
-- Professional report location (C:\IT-Reports)
-- Dynamic colors in interface
+- 6 core modules + JSON reporting
+- Safety-first design (admin/RDP detection)
+- Multi-disk detection
 
 ---
 
-## Support & Feedback
-This is a personal project designed for IT support automation. Use at your own risk in production environments. Always test in non-production systems first.
+## 🎓 About This Project
 
-For issues or suggestions, review the script source code in `src/Unified-Toolkit.ps1`.
+**Is:** Personal learning project to standardize L1/L2 support routines  
+**Is not:** Enterprise solution, certified tool, or RMM replacement  
+
+**Learn more:** [README.EN.md](../README.EN.md)
+
+---
+
+**Disclaimer:** Learning project. Test in non-prod first. No warranties. Use at your own discretion.

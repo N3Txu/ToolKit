@@ -32,7 +32,7 @@
     .\Unified-Toolkit.ps1 -Mode Run -Action All
     Executes all diagnostic modules
 .NOTES
-    Version: 1.0.0
+    Version: 1.0.1
     Author: IT Support Team
     Requires: PowerShell 7+ (pwsh)
     Platform: Windows only
@@ -66,7 +66,7 @@ param(
 # ============================================================================
 # GLOBAL VARIABLES
 # ============================================================================
-$script:ToolkitVersion = "1.0.0"
+$script:ToolkitVersion = "1.0.1"
 $script:LogFile = Join-Path $env:TEMP "SupportToolkit.log"
 $script:SessionResults = @{}
 
@@ -355,7 +355,7 @@ function Invoke-Performance {
         Write-Log "Not running as admin - skipping Windows Temp" -Level WARN
     }
 
-    $result.TotalCalculated_MB = $result.TempUser_MB + $result.TempWindows_MB
+    $result.TotalCalculated_MB = [math]::Round($result.TempUser_MB + $result.TempWindows_MB, 2)
 
     # DryRun mode
     if ($DryRun) {
@@ -495,7 +495,7 @@ function Invoke-Network {
     $result = [PSCustomObject]@{
         DefaultGateway     = 'Unknown'
         GatewayReachable   = $false
-        GoogleDNS          = $false
+        PingGoogle         = $false
         InternalDns        = $null
         InternalDnsResult  = 'Not Tested'
         FlushDNS           = 'Failed'
@@ -537,7 +537,7 @@ function Invoke-Network {
     # Test Google DNS (8.8.8.8)
     try {
         $googlePing = Test-Connection -ComputerName "8.8.8.8" -Count 2 -Quiet -ErrorAction Stop
-        $result.GoogleDNS = $googlePing
+        $result.PingGoogle = $googlePing
         if ($googlePing) {
             Write-Log "Google DNS (8.8.8.8) is reachable" -Level OK
         }
@@ -594,7 +594,7 @@ function Invoke-Network {
     # Display summary
     Write-Host "`n--- Network Diagnostics ---" -ForegroundColor Cyan
     Write-Host "Gateway:        $($result.DefaultGateway) - $(if($result.GatewayReachable){'OK'}else{'FAIL'})"
-    Write-Host "Google DNS:     $(if($result.GoogleDNS){'OK'}else{'FAIL'})"
+    Write-Host "Ping Google:    $(if($result.PingGoogle){'OK'}else{'FAIL'})"
     if ($InternalDns) {
         Write-Host "Internal DNS:   $($result.InternalDnsResult)"
     }
@@ -632,7 +632,7 @@ function Invoke-ServiceHealer {
 
         try {
             $service = Get-Service -Name $serviceName -ErrorAction Stop
-            $serviceResult.Status = $service.Status
+            $serviceResult.Status = $service.Status.ToString()
 
             if ($service.Status -eq 'Running') {
                 Write-Log "Restarting service: $serviceName" -Level INFO

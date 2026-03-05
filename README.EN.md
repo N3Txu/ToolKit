@@ -1,22 +1,67 @@
 # IT Support Toolkit
 
-> **Professional PowerShell 7 automation for Windows system diagnostics and maintenance**
+> **Personal learning project: Automating IT support routines with PowerShell 7**
 
 **English | [Español](README.md)**
 
-A comprehensive, safety-first toolkit designed for IT support professionals to automate routine troubleshooting and system maintenance tasks on Windows systems.
+A toolkit developed as an MVP to standardize my diagnostic and maintenance routines on Windows systems during my L1/L2 IT support learning journey.
 
 ---
 
-## 🎯 Purpose
+## 🎯 About This Project
 
-This is a **personal project** created to streamline common IT support workflows with a focus on:
+This is a **personal learning project** created to:
 
-- **Safety First** - Detects admin privileges and remote sessions to prevent disruptive actions
-- **Professional Logging** - Color-coded console output + persistent file logging
-- **Structured Reporting** - Export results to JSON for documentation and analysis
-- **Zero Dependencies** - Uses only native Windows commands and .NET
-- **Dual Modes** - Interactive menu for on-site work, CLI parameters for automation
+- **Standardize** my workflow for repetitive IT support tasks
+- **Practice** professional scripting with PowerShell 7
+- **Document** my processes for future reference
+- **Minimize errors** through automation and validations
+
+**Not an enterprise solution** - it's an honest tool I use to improve my efficiency and learn best practices while working on real support cases.
+
+---
+
+## 🎓 Design Decisions
+
+### Why PowerShell 7?
+- **Structured objects**: Cleaner data handling than text parsing
+- **Native JSON**: `ConvertTo-Json` for structured reports
+- **Cross-platform**: Though this toolkit is Windows-only, pwsh is portable
+
+### Why zero external dependencies?
+- **Portability**: Can copy script to USB or run in remote sessions
+- **Simplicity**: No module management, versions, or installers
+- **Learning**: Forces use of native cmdlets and CIM/WMI classes
+
+### Why "safety-first"?
+- **Human errors**: Detect admin/RDP before dangerous actions
+- **Dry-run mode**: Calculate impact before deleting files
+- **Logging**: Audit trail of all actions for troubleshooting
+
+---
+
+## 📏 Project Scope
+
+### ✅ What it does (v1.x)
+- Basic system diagnostics (inventory, network, services)
+- Safe maintenance (temp file cleanup with validations)
+- Structured JSON reports for documentation
+
+### ⏳ Planned (v2.x)
+- Optional collection of critical Windows events (Application, System)
+- Reporting improvements (HTML, historical report comparison)
+- Stability troubleshooting (crashes, freezes, blue screens)
+
+### 🔮 Vision (v3.x - Security posture / signals)
+- Basic security posture checks (Windows Defender, Firewall, Updates)
+- Best-effort collection of basic signals for analysis (failed logins, account changes)
+- **NOT detection/EDR**: Only observation and collection for learning
+
+### ❌ Out of scope
+- Automatic malware remediation
+- Deep forensic analysis
+- Active Directory management
+- System deployment or new system configuration
 
 ---
 
@@ -29,7 +74,7 @@ Comprehensive system inventory including hardware info, Windows version, uptime,
 Calculate and clean temporary files (user + system), with optional System File Checker execution.
 
 ### 🌐 Network Diagnostics
-Auto-detect gateway, test connectivity (gateway, Google DNS, custom DNS), flush/register DNS cache.
+Auto-detect gateway, test connectivity (gateway, 8.8.8.8, custom DNS), flush/register DNS cache.
 
 ### 🔧 Service Healer
 Automatically restart critical Windows services (Print Spooler, Audio, Windows Update).
@@ -132,7 +177,7 @@ pwsh -File .\src\Unified-Toolkit.ps1 -Mode Run -Action Network -InternalDns 10.0
 ```
 --- Network Diagnostics ---
 Gateway:        192.168.1.1 - OK
-Google DNS:     OK
+Ping Google:    OK
 Internal DNS:   Reachable
 Flush DNS:      Success
 Register DNS:   Success
@@ -178,7 +223,7 @@ Identifies if the session is:
 - **RDP** - Remote Desktop connection (yellow)
 - **Unknown** - Cannot determine
 
-**Safety Rule:** Potentially disruptive network operations (like `ipconfig /release`) are **blocked** in RDP/Unknown sessions unless you explicitly use `-Force`.
+**Safety Rule:** Potentially disruptive network operations (like `ipconfig /release`) **show a safety warning** in RDP/Unknown sessions. Use `-Force` explicitly to suppress the warning and execute anyway.
 
 ### Error Handling
 - Comprehensive try/catch blocks around all operations
@@ -217,9 +262,9 @@ IT-Support-Toolkit/
 | `-DryRun` | Switch | Performance: calculate cleanup size without deleting | `-DryRun` |
 | `-InternalDns` | String | Network: custom DNS server to test | `-InternalDns 10.0.0.1` |
 | `-OutPath` | String | Report: custom output directory (default: C:\IT-Reports) | `-OutPath "C:\Reports"` |
-| `-Force` | Switch | Override safety blocks for disruptive actions | `-Force` |
+| `-Force` | Switch | Network: suppress safety warnings in RDP for disruptive actions | `-Force` |
 
-For complete parameter documentation, see [docs/Commands.md](docs/Commands.md).
+For complete parameter documentation, see [docs/Commands.EN.md](docs/Commands.EN.md).
 
 ---
 
@@ -274,7 +319,7 @@ Complete PowerShell session capture (if supported by environment).
     "Username": "jdoe",
     "IsAdmin": true,
     "RemoteSessionState": "Local",
-    "ToolkitVersion": "1.0.0"
+    "ToolkitVersion": "1.0.1"
   },
   "Results": {
     "Triage": {
@@ -373,7 +418,7 @@ pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action All
 **A:** Not for all features. Triage, Network (basic), and Admin Shortcuts work without admin. Performance (Windows Temp cleanup) and some Service operations require admin.
 
 ### Q: Can I run this on a remote session?
-**A:** Yes! The toolkit detects RDP sessions and blocks potentially disruptive operations by default. Use `-Force` to override if needed.
+**A:** Yes! The toolkit detects RDP sessions and shows warnings for potentially disruptive operations by default. Use `-Force` to suppress the warning if needed.
 
 ### Q: What if `-DryRun` shows less space than expected?
 **A:** Some files may be locked or hidden. The script calculates based on accessible files only.
@@ -392,6 +437,59 @@ pwsh .\src\Unified-Toolkit.ps1 -Mode Run -Action All
 
 ### Q: Why does the ping to Google DNS (8.8.8.8) fail?
 **A:** In **home environments**, Windows Firewall or your router may block outbound ping (ICMP) for security. In **corporate environments**, there may be corporate firewall or proxy. If your web browsing works, your connectivity is OK.
+
+---
+
+## ⚠️ Known Limitations & Non-goals
+
+### 🚫 Out of Scope (By Design)
+- **Automatic malware remediation**: Not a security tool
+- **Deep forensic analysis**: Only basic system diagnostics
+- **Active Directory management**: Doesn't touch domain policies
+- **System deployment**: Not a provisioning tool
+- **Aggressive disk cleanup**: Only temp files, not Downloads/Recycle/Browser cache
+
+### 🚧 Current Limitations (v1.x)
+
+**Performance/Cleanup:**
+- Only cleans temporary files (User Temp + Windows Temp)
+- Doesn't clean: Downloads, Recycle Bin, browser caches, Windows Update backup
+- Files in use are skipped (no forced deletion)
+- No pre-cleanup integrity check (uses SFC optionally post-cleanup)
+
+**Network Diagnostics:**
+- Ping to 8.8.8.8 may fail in firewall environments (normal, not an error)
+- Doesn't diagnose proxy configuration
+- Doesn't validate SSL/TLS certificates
+- Doesn't test specific ports (ICMP only)
+
+**Service Healer:**
+- Hardcoded service list (Spooler, Audio, Windows Update)
+- Doesn't detect custom/third-party services
+- Doesn't validate service dependencies
+- Simple restart (no root cause troubleshooting)
+
+**Reporting:**
+- JSON only (no HTML, no CSV)
+- No historical comparison (each report is independent)
+- No automatic sending (email, webhook, etc.)
+
+**Environment:**
+- Windows 10/11 and Server 2016+ only (no legacy)
+- Requires PowerShell 7+ (not compatible with 5.1)
+- Native WMI/CIM only (no third-party modules)
+- No localization (output in English, docs in EN/ES)
+
+### 📚 Why These Limitations
+
+**Philosophy:** This toolkit is an **educational MVP**, not a commercial product. Limitations are **intentional** to:
+
+1. **Maintain simplicity**: Readable code for learning
+2. **Zero dependencies**: Portability without installation
+3. **Safety first**: Avoid dangerous over-automation
+4. **Controlled scope**: Finish v1.x before complicating
+
+**Roadmap:** Some limitations will be addressed in v2.x (HTML reports, event collection), others are permanent by design.
 
 ---
 
@@ -414,39 +512,98 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## 📜 License
+## 📜 License and Disclaimer
 
-This is a **personal project** provided as-is without warranty. Use at your own risk.
+This is a **personal learning project** provided "as-is" without warranties.
 
-You are free to:
-- Use this toolkit for personal or professional IT support
-- Modify and customize for your environment
-- Share with colleagues
+**Freedoms:**
+- ✅ Use for personal learning or professional work
+- ✅ Modify and adapt to your environment
+- ✅ Share with colleagues or the community
 
-**Disclaimer:** Always test in non-production environments first. The author is not responsible for any system changes or issues arising from use of this toolkit.
+**Responsibility:**
+- ⚠️ **Test in non-production environments first**
+- ⚠️ Review code before running with admin privileges
+- ⚠️ Author is not responsible for unwanted system changes
+
+**Philosophy:** This toolkit reflects my ongoing learning. It may have bugs, suboptimal decisions, or uncovered edge cases. **Use as reference, not as enterprise solution.**
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributions
 
-This is a personal learning project. If you have suggestions or find issues:
-1. Test your changes thoroughly
-2. Document any new features
-3. Ensure compatibility with PowerShell 7+ and Windows 10/11
+As a learning project, I appreciate:
+- 🐛 Bug reports with context (OS, PowerShell version, output)
+- 💡 Best practice suggestions (especially from seniors)
+- 📖 Documentation improvements
+- ⚠️ Pointing out antipatterns or unsafe patterns
+
+**Don't expect:** 24/7 support, frequent releases, or backward compatibility. It's public learning.
 
 ---
 
 ## 📚 Additional Resources
 
-- **Detailed Command Reference:** [docs/Commands.md](docs/Commands.md)
+- **Detailed Command Reference:** [docs/Commands.EN.md](docs/Commands.EN.md)
 - **PowerShell 7 Documentation:** https://docs.microsoft.com/powershell/
 - **Windows CIM/WMI Classes:** https://docs.microsoft.com/windows/win32/cimwin32prov/
 
 ---
 
-## 📌 Version
+## 📌 Version and Roadmap
 
-**Current Version:** 1.0.0  
-**Release Date:** March 3, 2026  
+**Current Version:** 1.0.1  
+**Release Date:** March 5, 2026  
 **PowerShell Required:** 7.0+  
 **Platform:** Windows 10/11, Windows Server 2016+
+
+### 🗺️ Roadmap
+
+#### v1.x - Foundation (Current)
+- ✅ Basic system diagnostics
+- ✅ Safe temporary file maintenance
+- ✅ Network diagnostics
+- ✅ Critical service healer
+- ✅ Structured JSON reports
+
+#### v2.x - Advanced Troubleshooting (Planned)
+- 📋 Collection of critical Windows events (crashes, application errors)
+- 📊 HTML reports with basic charts
+- 🔄 Historical report comparison
+- 🧹 Disk usage analysis (large folders, duplicates)
+
+#### v3.x - Security posture / signals (Vision)
+- 🛡️ Basic posture checks (Defender, Firewall, Updates)
+- 🔐 Best-effort signal collection (login attempts, user changes)
+- 📝 Basic compliance reporting
+- ⚠️ **Note**: Only observation/reporting, NOT active detection or EDR
+
+### 📜 Changelog
+
+#### v1.0.1 (2026-03-05)
+- **Precision improvements**: All MB/GB values rounded to 2 decimal places
+- **Enhanced JSON format**: Service Status now displays text (Running/Stopped) instead of numeric codes (1/4)
+- **Field rename**: `GoogleDNS` → `PingGoogle` for better clarity in Network Diagnostics
+- **Fix**: Corrected floating-point precision issues in `TotalCalculated_MB`
+
+#### v1.0.0 (2026-03-03)
+- Initial release
+- 6 main modules (Triage, Performance, Network, Services, Admin, Report)
+- Interactive and non-interactive modes
+- Safety-first design with RDP detection
+- Professional logging and JSON reporting
+- Multi-disk detection with detailed information
+- Professional report location (C:\IT-Reports)
+
+---
+
+## 🙏 Learning Notes
+
+This project has taught me:
+- PowerShell CLI design (parameters, validation, help)
+- PowerShell object handling vs text parsing
+- Importance of logging and error handling in production scripts
+- Safety patterns for destructive operations
+- Technical documentation for end users
+
+**Happy troubleshooting!** 🚀
