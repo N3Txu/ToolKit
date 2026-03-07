@@ -4,7 +4,7 @@
 
 **[English](README.EN.md) | Español**
 
-Un toolkit desarrollado como MVP para estandarizar mis rutinas de diagnóstico y mantenimiento en sistemas Windows durante mi aprendizaje en soporte IT de nivel L1/L2.
+Toolkit desarrollado como MVP para estandarizar mis rutinas de diagnóstico y mantenimiento en sistemas Windows durante mi aprendizaje en soporte IT de nivel L1/L2.
 
 ---
 
